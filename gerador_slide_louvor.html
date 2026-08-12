@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Slides de Louvor</title>
+    <!-- PptxGenJS via CDN para PowerPoint perfeito -->
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121214; color: #e1e1e6; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 20px; color: #ffffff; font-size: 24px; font-weight: 600; }
+        .container { max-width: 1000px; margin: 0 auto; background: #202024; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid #29292e; }
+        label { display: block; margin-top: 15px; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #a8a8b3; text-transform: uppercase; letter-spacing: 0.5px; }
+        textarea { width: 100%; height: 220px; background-color: #121214; color: #00f5c4; border: 1px solid #323238; border-radius: 8px; padding: 14px; font-size: 15px; font-family: monospace; line-height: 1.5; resize: vertical; }
+        textarea:focus, select:focus, input:focus { outline: none; border-color: #00b37e; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 15px; }
+        select, input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background-color: #121214; color: #fff; font-size: 14px; }
+        .btn-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 20px; }
+        button { padding: 12px 16px; border-radius: 6px; border: none; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s, transform 0.1s; color: #fff; }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background-color: #00b37e; }
+        .btn-primary:hover { background-color: #00875f; }
+        .btn-warning { background-color: #d97706; }
+        .btn-warning:hover { background-color: #b45309; }
+        .btn-secondary { background-color: #2b2b36; border: 1px solid #3f3f4e; }
+        .btn-secondary:hover { background-color: #383846; }
+        
+        .preview-area { margin-top: 25px; }
+        .preview-wrapper {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000000;
+            border: 2px solid #323238;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .slide-preview {
+            width: 90%;
+            color: #ffffff;
+            text-align: center;
+            white-space: pre-line;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+        .nav-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        
+        #fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #000000; color: #ffffff;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        #fullscreen-text {
+            width: 90%;
+            white-space: pre-line;
+            word-wrap: break-word;
+            line-height: 1.2;
+        }
+        #fullscreen-counter {
+            position: absolute;
+            bottom: 20px; right: 20px;
+            font-size: 14px; color: #444;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gerador de Slides de Louvor</h1>
+    
+    <label for="lyrics">Letra do Louvor (separe cada slide por uma linha em branco):</label>
+    <textarea id="lyrics" placeholder="A ALEGRIA
+VENCEDORES POR CRISTO
+
+A ALEGRIA ESTÁ NO CORAÇÃO
+DE QUEM JÁ CONHECE A JESUS
+
+A VERDADEIRA PAZ SÓ TEM AQUELE
+QUE JÁ CONHECE A JESUS"></textarea>
+    
+    <div class="controls">
+        <div>
+            <label for="slideDate">Data Apresentação:</label>
+            <input type="date" id="slideDate">
+        </div>
+        <div>
+            <label for="fontSize">Tamanho Fonte (pt):</label>
+            <input type="number" id="fontSize" value="65" min="20" max="150">
+        </div>
+        <div>
+            <label for="fontFamily">Fonte:</label>
+            <select id="fontFamily">
+                <option value="Arial" selected>Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Trebuchet MS">Trebuchet MS</option>
+            </select>
+        </div>
+        <div>
+            <label for="textCase">Caixa de Texto:</label>
+            <select id="textCase">
+                <option value="uppercase" selected>MAIÚSCULAS</option>
+                <option value="original">Original</option>
+                <option value="lowercase">minúsculas</option>
+            </select>
+        </div>
+        <div>
+            <label for="isBold">Negrito:</label>
+            <select id="isBold">
+                <option value="bold" selected>Ativado (Negrito)</option>
+                <option value="normal">Desativado (Normal)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button id="btnFullscreen" type="button" class="btn-primary">Apresentar (Tela Cheia)</button>
+        <button id="btnPowerPoint" type="button" class="btn-warning">Baixar PowerPoint (.pptx)</button>
+        <button id="btnHTML" type="button" class="btn-secondary">Baixar Slides (.html)</button>
+    </div>
+
+    <div class="preview-area">
+        <label>Pré-visualização do Slide:</label>
+        <div class="preview-wrapper">
+            <div id="slidePreview" class="slide-preview"></div>
+        </div>
+        <div class="nav-controls">
+            <button id="btnPrev" type="button" class="btn-secondary" style="width: 100px;">&lt; Anterior</button>
+            <span id="slideCounter" style="font-weight: 600; color: #a8a8b3;">Slide 0 de 0</span>
+            <button id="btnNext" type="button" class="btn-secondary" style="width: 100px;">Próximo &gt;</button>
+        </div>
+    </div>
+</div>
+
+<div id="fullscreen-overlay">
+    <div id="fullscreen-text"></div>
+    <div id="fullscreen-counter"></div>
+</div>
+
+<script>
+    let slides = [];
+    let currentSlideIndex = 0;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('slideDate').value = `${yyyy}-${mm}-${dd}`;
+
+        document.getElementById('lyrics').addEventListener('input', updatePreview);
+        document.getElementById('textCase').addEventListener('change', updatePreview);
+        document.getElementById('isBold').addEventListener('change', updatePreview);
+        document.getElementById('fontSize').addEventListener('input', updatePreview);
+        document.getElementById('fontFamily').addEventListener('change', updatePreview);
+
+        document.getElementById('btnNext').addEventListener('click', nextSlide);
+        document.getElementById('btnPrev').addEventListener('click', prevSlide);
+        document.getElementById('btnFullscreen').addEventListener('click', startFullscreen);
+        document.getElementById('fullscreen-overlay').addEventListener('click', nextSlide);
+        document.getElementById('btnPowerPoint').addEventListener('click', exportPowerPoint);
+        document.getElementById('btnHTML').addEventListener('click', downloadSlidesHTML);
+
+        updatePreview();
+    });
+
+    function getFormattedFileName(extension) {
+        const dateVal = document.getElementById('slideDate').value;
+        if (dateVal) {
+            const parts = dateVal.split('-');
+            if (parts.length === 3) {
+                return `louvor_${parts[2]}_${parts[1]}_${parts[0]}.${extension}`;
+            }
+        }
+        return `louvor.${extension}`;
+    }
+
+    function applyTextCase(text) {
+        const textCase = document.getElementById('textCase').value;
+        if (textCase === 'uppercase') return text.toUpperCase();
+        if (textCase === 'lowercase') return text.toLowerCase();
+        return text;
+    }
+
+    function processTextToSlides() {
+        const rawText = document.getElementById('lyrics').value;
+        if (!rawText || !rawText.trim()) return [];
+
+        const blocks = rawText.split(/\n\s*\n/);
+        const result = [];
+
+        blocks.forEach(block => {
+            const clean = block.trim();
+            if (clean) {
+                result.push(applyTextCase(clean));
+            }
+        });
+
+        return result;
+    }
+
+    function updatePreview() {
+        slides = processTextToSlides();
+        const fontFamily = document.getElementById('fontFamily').value;
+        const fontSize = parseInt(document.getElementById('fontSize').value) || 65;
+        const isBold = document.getElementById('isBold').value;
+        const previewEl = document.getElementById('slidePreview');
+
+        previewEl.style.fontFamily = fontFamily;
+        previewEl.style.fontSize = Math.round(fontSize * 0.45) + 'px';
+        previewEl.style.fontWeight = isBold;
+
+        if (slides.length === 0) {
+            previewEl.textContent = 'Cole a letra acima para visualizar os slides';
+            document.getElementById('slideCounter').textContent = 'Slide 0 de 0';
+            return;
+        }
+
+        if (currentSlideIndex >= slides.length) currentSlideIndex = 0;
+        showSlide(currentSlideIndex);
+    }
+
+    function showSlide(index) {
+        if (slides.length === 0) return;
+        currentSlideIndex = index;
+        
+        document.getElementById('slidePreview').textContent = slides[currentSlideIndex];
+        document.getElementById('fullscreen-text').textContent = slides[currentSlideIndex];
+        
+        const counterText = `Slide ${currentSlideIndex + 1} de ${slides.length}`;
+        document.getElementById('slideCounter').textContent = counterText;
+        document.getElementById('fullscreen-counter').textContent = counterText;
+    }
+
+    function nextSlide() {
+        if (slides.length === 0) return;
+        if (currentSlideIndex < slides.length - 1) {
+            currentSlideIndex++;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    function prevSlide() {
+        if (slides.length === 0) return;
+        if (currentSlideIndex > 0) {
+            currentSlideIndex--;
+            showSlide(currentSlideIndex);
+        }
+    }
+
+    function startFullscreen() {
+        slides = processTextToSlides();
+        if (slides.length === 0) {
+            alert('Por favor, cole algum texto antes de apresentar.');
+            return;
+        }
+        
+        const fsOverlay = document.getElementById('fullscreen-overlay');
+        const fsText = document.getElementById('fullscreen-text');
+        
+        fsText.style.fontFamily = document.getElementById('fontFamily').value;
+        fsText.style.fontSize = document.getElementById('fontSize').value + 'pt';
+        fsText.style.fontWeight = document.getElementById('isBold').value;
+        fsOverlay.style.display = 'flex';
+
+        showSlide(currentSlideIndex);
+
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        const fsOverlay = document.getElementById('fullscreen-overlay');
+        if (fsOverlay.style.display === 'flex') {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            } else if (e.key === 'Escape') {
+                fsOverlay.style.display = 'none';
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+    });
+
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement) {
+            document.getElementById('fullscreen-overlay').style.display = 'none';
+        }
+    });
+
+    function downloadSlidesHTML() {
+        const slidesList = processTextToSlides();
+        if (slidesList.length === 0) {
+            alert('Por favor, cole algum texto antes de baixar.');
+            return;
+        }
+
+        const fontSize = parseInt(document.getElementById('fontSize').value) || 65;
+        const fontFamily = document.getElementById('fontFamily').value;
+        const isBoldVal = document.getElementById('isBold').value === 'bold' ? 'bold' : 'normal';
+        const fileName = getFormattedFileName('html');
+
+        const slidesMarkup = slidesList.map((text) => {
+            const safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return `<div class="slide">${safeText}</div>`;
+        }).join('\n');
+
+        const fullHTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Slides de Louvor</title>
+<style>
+    body { margin:0; padding:0; background:#000; color:#fff; font-family:${fontFamily}, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; text-align:center; cursor:pointer; user-select:none; }
+    .slide { display:none; width:85%; max-width:1100px; white-space:pre-line; word-wrap:break-word; font-size:${fontSize}pt; font-weight:${isBoldVal}; line-height:1.2; }
+    .slide.active { display:block; }
+    #counter { position:absolute; bottom:20px; right:20px; font-size:16px; color:#555; font-family:sans-serif; }
+</style>
+</head>
+<body>
+${slidesMarkup}
+<div id="counter"></div>
+<script>
+    const slides = document.querySelectorAll('.slide');
+    let cur = 0;
+    function show() {
+        slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+        document.getElementById('counter').textContent = (cur + 1) + ' / ' + slides.length;
+    }
+    window.onclick = function() { if (cur < slides.length - 1) { cur++; show(); } };
+    window.onkeydown = function(e) {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { if (cur < slides.length - 1) { cur++; show(); } }
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') { if (cur > 0) { cur--; show(); } }
+    };
+    show();
+<\/script>
+</body>
+</html>`;
+
+        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function exportPowerPoint() {
+        const slidesList = processTextToSlides();
+        if (slidesList.length === 0) {
+            alert('Por favor, cole algum texto antes de exportar.');
+            return;
+        }
+
+        const PptxClass = typeof PptxGenJS !== 'undefined' ? PptxGenJS : (typeof pptxgen !== 'undefined' ? pptxgen : null);
+        if (!PptxClass) {
+            alert('A biblioteca do PowerPoint ainda está carregando. Verifique sua conexão com a internet.');
+            return;
+        }
+
+        const fontSizeVal = parseInt(document.getElementById('fontSize').value) || 65;
+        const fontFamily = document.getElementById('fontFamily').value;
+        const isBoldVal = document.getElementById('isBold').value === 'bold';
+        const fileName = getFormattedFileName('pptx');
+
+        let pptx = new PptxClass();
+        pptx.layout = 'LAYOUT_16x9';
+
+        slidesList.forEach((slideText) => {
+            let slide = pptx.addSlide();
+            slide.background = { color: '000000' };
+            slide.addText(slideText, {
+                x: '5%',
+                y: '5%',
+                w: '90%',
+                h: '90%',
+                align: 'center',
+                valign: 'middle',
+                fontFace: fontFamily,
+                fontSize: fontSizeVal,
+                color: 'FFFFFF',
+                bold: isBoldVal,
+                lineSpacing: Math.round(fontSizeVal * 1.2)
+            });
+        });
+
+        pptx.writeFile({ fileName: fileName });
+    }
+</script>
+
+</body>
+</html>
